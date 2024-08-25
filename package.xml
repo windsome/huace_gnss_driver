@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>huace_gnss_driver</name>
+  <version>1.0.0</version>
+  <description>C++ driver(ros2 version) for Huace CGI430's GNSS and INS receivers</description>
+
+  <!-- Maintainers -->
+  <maintainer email="36081189@qq.com">windsome.feng</maintainer>
+
+  <!-- License -->
+  <license>BSD 3-Clause License</license>
+
+  <!-- Websites -->
+  <url type="website">https://github.com/windsome/huace_gnss_driver</url>
+
+  <!-- Authors -->
+  <author>windsome.feng</author>
+
+  <!-- Dependencies-->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  
+  <depend>diagnostic_msgs</depend>
+  <depend>nmea_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>gps_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>boost</depend>
+  <depend>libpcap</depend>  
+  <depend>geographiclib</depend>
+  <depend>tf2</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>boost_io_context</depend>
+  <depend>boost_tcp_driver</depend>
+  <depend>boost_udp_driver</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

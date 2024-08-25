@@ -1,0 +1,70 @@
+# logger
+activate_debug_log: false
+
+# io类型,使用第一个
+io:
+  serial:
+    port: "/dev/ttyUSB0"
+    baudrate: 921600
+    hw_flow_control: "off"
+  tcp:
+    host_ip: "" # 本地地址,作为服务器时用,客户端时为空
+    host_port: 0 # 本地端口,不填或0为任意端口
+    remote_ip: "192.168.3.1" # 远端服务器地址
+    remote_port: 28784 # 远端服务器端口
+  udp:
+    type: "" # udp类型,默认单播unicast,组播multicast,广播broadcast
+    host_ip: "" # 本地地址,用于接收消息,不填接收所有地址(0.0.0.0),多网卡时用于接收某个地址消息
+    host_port: 0 # 本地端口,用于接收消息
+    remote_ip: "" # 远端地址,默认发送目标地址,多播时为多播组地址
+    remote_port: 0 # 远端端口,默认发送目标端口,多播时为多播组地址
+  can:
+    port: "/dev/can0"
+
+# frame_id列表
+frame_id: gnss
+imu_frame_id: imu
+poi_frame_id: base_link
+vsm_frame_id: vsm
+aux1_frame_id: aux1
+vehicle_frame_id: base_link
+local_frame_id: odom
+
+# time
+use_gnss_time: false
+ntp_server: true
+latency_compensation: true
+
+publish:
+  # For both GNSS and INS Rxs
+  auto_publish: false
+  publish_only_valid: false
+  gpgga: false
+  gprmc: false
+  gpst: false
+  pose: false
+  twist: true
+  imu: true
+  localization: true
+  tf: true
+
+
+# INS-Specific Parameters
+
+ins_spatial_config:
+  imu_orientation:
+    theta_x: 0.0
+    theta_y: 0.0
+    theta_z: 0.0
+  poi_lever_arm:
+    delta_x: 0.0
+    delta_y: 0.0
+    delta_z: 0.0
+  ant_lever_arm:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  vsm_lever_arm:
+    vsm_x: 0.0
+    vsm_y: 0.0
+    vsm_z: 0.0
