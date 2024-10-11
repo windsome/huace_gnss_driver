@@ -17,13 +17,13 @@
   <author>windsome.feng</author>
 
   <!-- Dependencies-->
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
+
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  
   <depend>diagnostic_msgs</depend>
   <depend>nmea_msgs</depend>
   <depend>sensor_msgs</depend>
@@ -40,6 +40,9 @@
   <depend>boost_io_context</depend>
   <depend>boost_tcp_driver</depend>
   <depend>boost_udp_driver</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

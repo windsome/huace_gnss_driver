@@ -14,32 +14,31 @@ os.environ['RCUTILS_CONSOLE_OUTPUT_FORMAT'] = '{time}: [{name}] [{severity}]\t{m
 # Start as component:
 
 def generate_launch_description():
-
     tf_imu = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments = "0 0 0 0 0 0 base_link imu".split(' ')
+        arguments = ["--x", "0", "--y", "0", "--z", "0", "--qx", "0", "--qy", "0", "--qz", "0", "--qw", "1", "--frame-id", "base_link", "--child-frame-id", "imu"]
     )
 
     tf_gnss = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments = "0 0 0 0 0 0 imu gnss".split(' ')
+        arguments = ["--x", "0", "--y", "0", "--z", "0", "--qx", "0", "--qy", "0", "--qz", "0", "--qw", "1", "--frame-id", "imu", "--child-frame-id", "gnss"]
     )
 
     tf_vsm = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments = "0 0 0 0 0 0 imu vsm".split(' ')
+        arguments = ["--x", "0", "--y", "0", "--z", "0", "--qx", "0", "--qy", "0", "--qz", "0", "--qw", "1", "--frame-id", "imu", "--child-frame-id", "vsm"]
     )
 
     tf_aux1 = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments = "0 0 0 0 0 0 imu aux1".split(' ')
+        arguments = ["--x", "0", "--y", "0", "--z", "0", "--qx", "0", "--qy", "0", "--qz", "0", "--qw", "1", "--frame-id", "imu", "--child-frame-id", "aux1"]
     )
 
-    default_file_name = 'rover_node.yaml'
+    default_file_name = 'huace.yaml'
     name_arg_file_name = "file_name"
     arg_file_name = DeclareLaunchArgument(name_arg_file_name,
                                           default_value=TextSubstitution(text=str(default_file_name)))
@@ -48,11 +47,13 @@ def generate_launch_description():
                                           default_value=[get_package_share_directory('huace_gnss_driver'), '/config/', LaunchConfiguration(name_arg_file_name)])
 
     node = Node(
-            package='huace_gnss_driver',
-            executable='huace_gnss_driver_node',
-            name='huace_gnss_driver',
-            emulate_tty=True,
-            sigterm_timeout = '20',
-            parameters=[LaunchConfiguration(name_arg_file_path)])
+        package='huace_gnss_driver',
+        executable='huace_gnss_node_exe',
+        name='huace_gnss_node',
+        emulate_tty=True,
+        sigterm_timeout = '20',
+        parameters=[LaunchConfiguration(name_arg_file_path)],
+        output='screen'
+    )
 
     return launch.LaunchDescription([arg_file_name, arg_file_path, node, tf_imu, tf_gnss, tf_vsm, tf_aux1])

@@ -10,7 +10,8 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 // ROSaic includes
-#include <huace_gnss_driver/communication_core.hpp>
+#include <huace_gnss_driver/huace_node_base.hpp>
+#include <huace_gnss_driver/async_manager.hpp>
 
 /**
  * @namespace huace_node
@@ -31,6 +32,7 @@ namespace huace_node {
         HuaceNode(const rclcpp::NodeOptions& options);
 
     private:
+        void connect();
         /**
          * @brief Gets the node parameters from the ROS Parameter Server, parts of
          * which are specified in a YAML file
@@ -64,10 +66,8 @@ namespace huace_node {
         void getRPY(const QuaternionMsg& qm, double& roll, double& pitch,
                     double& yaw) const;
 
-        void sendVelocity(const std::string& velNmea);
-
         //! Handles communication with the Rx
-        io::CommunicationCore IO_;
+        std::unique_ptr<io::AsyncManager> IO_;
         //! tf2 buffer and listener
         tf2_ros::Buffer tfBuffer_;
         std::unique_ptr<tf2_ros::TransformListener> tfListener_;

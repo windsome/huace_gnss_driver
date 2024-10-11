@@ -2,7 +2,7 @@
 
 <launch>
   <arg name="node_name" default="huace_gnss" />
-  <arg name="param_file_name" />
+  <arg name="param_file_name" default="huace" />
   <arg name="output" default="screen" />
   <arg name="respawn" default="false" />
   <arg name="clear_params" default="true" />

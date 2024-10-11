@@ -10,13 +10,8 @@
 // tf2 includes
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
-#ifdef ROS2_VER_N250
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#else
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#endif
 // ROS msg includes
 #include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <diagnostic_msgs/msg/diagnostic_status.hpp>
@@ -122,35 +117,6 @@ public:
 
     const Settings* settings() const { return &settings_; }
 
-    void registerSubscriber()
-    {
-        try
-        {
-            if (settings_.ins_vsm.ros_source == "odometry")
-                odometrySubscriber_ =
-                    this->create_subscription<nav_msgs::msg::Odometry>(
-                        "odometry_vsm",
-                        rclcpp::QoS(rclcpp::KeepLast(1))
-                            .durability_volatile()
-                            .best_effort(),
-                        std::bind(&HuaceNodeBase::callbackOdometry, this,
-                                  std::placeholders::_1));
-            else if (settings_.ins_vsm.ros_source == "twist")
-                twistSubscriber_ =
-                    this->create_subscription<TwistWithCovarianceStampedMsg>(
-                        "twist_vsm",
-                        rclcpp::QoS(rclcpp::KeepLast(1))
-                            .durability_volatile()
-                            .best_effort(),
-                        std::bind(&HuaceNodeBase::callbackTwist, this,
-                                  std::placeholders::_1));
-        } catch (const std::runtime_error& ex)
-        {
-            this->log(log_level::ERROR, "Subscriber initialization failed due to: " +
-                                            std::string(ex.what()) + ".");
-        }
-    }
-
     /**
      * @brief Gets an integer or unsigned integer value from the parameter server
      * @param[in] name The key to be used in the parameter server's dictionary
@@ -194,7 +160,7 @@ public:
             return false;
         }
         return true;
-    };
+    }
 
     /**
      * @brief Log function to provide abstraction of ROS loggers
@@ -367,146 +333,9 @@ public:
      */
     bool hasImprovedVsmHandling() { return capabilities_.has_improved_vsm_handling; }
 
-private:
-    void callbackOdometry(const nav_msgs::msg::Odometry::ConstSharedPtr odo)
-    {
-        Timestamp stamp = timestampFromRos(odo->header.stamp);
-
-        processTwist(stamp, odo->twist);
-    }
-
-    void callbackTwist(const TwistWithCovarianceStampedMsg::ConstSharedPtr twist)
-    {
-        Timestamp stamp = timestampFromRos(twist->header.stamp);
-
-        processTwist(stamp, twist->twist);
-    }
-
-    void processTwist(Timestamp stamp,
-                      const geometry_msgs::msg::TwistWithCovariance& twist)
-    {
-        // in case stamp was not set
-        if (stamp == 0)
-            stamp = getTime();
-
-        thread_local Eigen::Vector3d vel = Eigen::Vector3d::Zero();
-        thread_local Eigen::Vector3d var = Eigen::Vector3d::Zero();
-        thread_local uint64_t ctr = 0;
-        thread_local Timestamp lastStamp = 0;
-
-        ++ctr;
-        vel[0] += twist.twist.linear.x;
-        vel[1] += twist.twist.linear.y;
-        vel[2] += twist.twist.linear.z;
-        var[0] += twist.covariance[0];
-        var[1] += twist.covariance[7];
-        var[2] += twist.covariance[14];
-
-        // Rx expects averaged velocity at a rate of 2 Hz
-        if ((stamp - lastStamp) >= 495000000) // allow for 5 ms jitter
-        {
-            vel /= ctr;
-            var /= ctr;
-            time_t epochSeconds = stamp / 1000000000;
-            struct tm* tm_temp = std::gmtime(&epochSeconds);
-            std::stringstream timeUtc;
-            timeUtc << std::setfill('0') << std::setw(2)
-                    << std::to_string(tm_temp->tm_hour) << std::setw(2)
-                    << std::to_string(tm_temp->tm_min) << std::setw(2)
-                    << std::to_string(tm_temp->tm_sec) << "." << std::setw(3)
-                    << std::to_string((stamp - (stamp / 1000000000) * 1000000000) /
-                                      1000000);
-
-            std::string v_x;
-            std::string v_y;
-            std::string v_z;
-            std::string std_x;
-            std::string std_y;
-            std::string std_z;
-            if (settings_.ins_vsm.ros_config[0])
-            {
-                v_x = string_utilities::trimDecimalPlaces(vel[0]);
-                if (settings_.ins_vsm.ros_variances_by_parameter)
-                    std_x = string_utilities::trimDecimalPlaces(
-                        settings_.ins_vsm.ros_variances[0]);
-                else if (var[0] > 0.0)
-                    std_x = string_utilities::trimDecimalPlaces(std::sqrt(var[0]));
-                else if (!capabilities_.has_improved_vsm_handling)
-                {
-                    log(log_level::ERROR, "Invalid covariance value for v_x: " +
-                                              std::to_string(var[0]) +
-                                              ". Ignoring measurement.");
-                    v_x = "";
-                    std_x = string_utilities::trimDecimalPlaces(1000000.0);
-                }
-            } else
-                std_x = std::to_string(1000000.0);
-            if (settings_.ins_vsm.ros_config[1])
-            {
-                if (settings_.use_ros_axis_orientation)
-                    v_y = "-";
-                v_y += string_utilities::trimDecimalPlaces(vel[1]);
-                if (settings_.ins_vsm.ros_variances_by_parameter)
-                    std_y = string_utilities::trimDecimalPlaces(
-                        settings_.ins_vsm.ros_variances[1]);
-                else if (var[1] > 0.0)
-                    std_y = string_utilities::trimDecimalPlaces(std::sqrt(var[1]));
-                else if (!capabilities_.has_improved_vsm_handling)
-                {
-                    log(log_level::ERROR, "Invalid covariance value for v_y: " +
-                                              std::to_string(var[1]) +
-                                              ". Ignoring measurement.");
-                    v_y = "";
-                    std_y = string_utilities::trimDecimalPlaces(1000000.0);
-                }
-            } else
-                std_y = string_utilities::trimDecimalPlaces(1000000.0);
-            if (settings_.ins_vsm.ros_config[2])
-            {
-                if (settings_.use_ros_axis_orientation)
-                    v_z = "-";
-                v_z += string_utilities::trimDecimalPlaces(vel[2]);
-                if (settings_.ins_vsm.ros_variances_by_parameter)
-                    std_z = string_utilities::trimDecimalPlaces(
-                        settings_.ins_vsm.ros_variances[2]);
-                else if (var[2] > 0.0)
-                    std_z = string_utilities::trimDecimalPlaces(std::sqrt(var[2]));
-                else if (!capabilities_.has_improved_vsm_handling)
-                {
-                    log(log_level::ERROR, "Invalid covariance value for v_z: " +
-                                              std::to_string(var[2]) +
-                                              ". Ignoring measurement.");
-                    v_z = "";
-                    std_z = string_utilities::trimDecimalPlaces(1000000.0);
-                }
-            } else
-                std_z = string_utilities::trimDecimalPlaces(1000000.0);
-
-            std::string velNmea = "$PSSN,VSM," + timeUtc.str() + "," + v_x + "," +
-                                  v_y + "," + std_x + "," + std_y + "," + v_z + "," +
-                                  std_z;
-
-            char crc = std::accumulate(velNmea.begin() + 1, velNmea.end(), 0,
-                                       [](char sum, char ch) { return sum ^ ch; });
-
-            std::stringstream crcss;
-            crcss << std::hex << static_cast<int32_t>(crc);
-
-            velNmea += "*" + crcss.str() + "\r\n";
-            sendVelocity(velNmea);
-
-            vel = Eigen::Vector3d::Zero();
-            var = Eigen::Vector3d::Zero();
-            ctr = 0;
-            lastStamp = stamp;
-        }
-    }
-
 protected:
     //! Settings
     Settings settings_;
-    //! Send velocity to communication layer (virtual)
-    virtual void sendVelocity(const std::string& velNmea) = 0;
 
 private:
     //! Map of topics and publishers

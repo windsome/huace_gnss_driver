@@ -63,11 +63,12 @@ struct InsVsm
 namespace device_type {
     enum DeviceType
     {
-        TCP,
-        UDP,
+        NONE = 0,
+        UDP_SERVER = 1,
+        TCP_CLIENT,
         SERIAL,
-        SBF_FILE,
-        PCAP_FILE
+        // SBF_FILE,
+        // PCAP_FILE
     };
 } // namespace device_type
 
@@ -128,6 +129,10 @@ struct Settings
     std::string io_udp_remote_ip;
     //! TCP port
     uint32_t io_udp_remote_port;
+    //! SERIAL PORT NAME
+    std::string io_serial_portname;
+    //! SERIAL BAUDRAT
+    int32_t io_serial_baudrate;
 
     //! Wether to publish automatically for cinfigure_rx = false
     bool auto_publish;
