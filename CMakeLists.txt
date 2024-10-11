@@ -71,5 +71,6 @@ ament_auto_package(
   msg
   launch
   config
+  rviz_cfg
 )
 

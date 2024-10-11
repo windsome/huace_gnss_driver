@@ -1,8 +1,12 @@
 #include <GeographicLib/UTMUPS.hpp>
 #include <huace_gnss_driver/message_handler.hpp>
 
+#include <geometry_msgs/msg/quaternion.hpp>
+#include "autoware_sensing_msgs/msg/gnss_ins_orientation_stamped.hpp"
+
 #include <boost/tokenizer.hpp>
 
+#include <cmath>
 #include <thread>
 
 /**
@@ -730,6 +734,57 @@ void MessageHandler::parseNmea(const std::shared_ptr<Telegram> & telegram)
         } else
           msg.header.stamp = timestampToRos(telegram->stamp);
         publish<GpchcMsg>("gpchc", msg);
+
+        // sensor_msgs::msg::Imu
+        // sensor_msgs::msg::NavSatFix
+        // autoware_sensing_msgs::msg::GnssInsOrientationStamped
+        sensor_msgs::msg::Imu imu;
+        sensor_msgs::msg::NavSatFix nav_sat_fix;
+        autoware_sensing_msgs::msg::GnssInsOrientationStamped gnss_ins_orientation;
+        imu.header.stamp = node_->now();
+        imu.header.frame_id = "imu_link";
+        imu.angular_velocity.x = msg.gyrox * M_PI / 180;
+        imu.angular_velocity.y = msg.gyroy * M_PI / 180;
+        imu.angular_velocity.z = msg.gyroz * M_PI / 180;
+        imu.angular_velocity_covariance[2 * 3 + 2] = 0.05;
+        publish<sensor_msgs::msg::Imu>("imu_raw", imu);
+
+        nav_sat_fix.header.stamp = node_->now();
+        nav_sat_fix.header.frame_id = "gnss_link";
+        nav_sat_fix.latitude = msg.latitude;
+        nav_sat_fix.longitude = msg.longitude;
+        nav_sat_fix.altitude = msg.altitude;
+        nav_sat_fix.status.status = 1;             // STATUS_FIX =0;STATUS_SBAS_FIX = 1
+        nav_sat_fix.status.service = 1;            // SERVICE_GPS
+        nav_sat_fix.position_covariance_type = 3;  // COVARIANCE_TYPE_KNOWN
+        if (msg.status == 0x42) {
+          nav_sat_fix.position_covariance[0] = 0.1;
+          nav_sat_fix.position_covariance[4] = 0.1;
+          nav_sat_fix.position_covariance[8] = 0.3;
+        } else if (msg.status == 0x52) {
+          nav_sat_fix.position_covariance[0] = 0.3;
+          nav_sat_fix.position_covariance[4] = 0.3;
+          nav_sat_fix.position_covariance[8] = 1.0;
+        } else {
+          nav_sat_fix.position_covariance[0] = 1.0;
+          nav_sat_fix.position_covariance[4] = 1.0;
+          nav_sat_fix.position_covariance[8] = 2.0;
+        }
+        publish<sensor_msgs::msg::NavSatFix>("nav_sat_fix", nav_sat_fix);
+
+        tf2::Quaternion frame_quat;
+        frame_quat.setRPY(msg.roll * M_PI / 180, msg.pitch * M_PI / 180, msg.heading * M_PI / 180);
+        gnss_ins_orientation.header.stamp = node_->now();
+        gnss_ins_orientation.orientation.orientation.x = frame_quat.x();
+        gnss_ins_orientation.orientation.orientation.y = frame_quat.y();
+        gnss_ins_orientation.orientation.orientation.z = frame_quat.z();
+        gnss_ins_orientation.orientation.orientation.w = frame_quat.w();
+        gnss_ins_orientation.orientation.rmse_rotation_x = 0.025;
+        gnss_ins_orientation.orientation.rmse_rotation_y = 0.025;
+        gnss_ins_orientation.orientation.rmse_rotation_z = 0.025;
+        publish<autoware_sensing_msgs::msg::GnssInsOrientationStamped>(
+          "gnss_ins_orientation", gnss_ins_orientation);
+
         break;
       }
       case 5: {
@@ -750,6 +805,57 @@ void MessageHandler::parseNmea(const std::shared_ptr<Telegram> & telegram)
         } else
           msg.header.stamp = timestampToRos(telegram->stamp);
         publish<GpchcxMsg>("gpchcx", msg);
+
+        // sensor_msgs::msg::Imu
+        // sensor_msgs::msg::NavSatFix
+        // autoware_sensing_msgs::msg::GnssInsOrientationStamped
+        sensor_msgs::msg::Imu imu;
+        sensor_msgs::msg::NavSatFix nav_sat_fix;
+        autoware_sensing_msgs::msg::GnssInsOrientationStamped gnss_ins_orientation;
+        imu.header.stamp = node_->now();
+        imu.header.frame_id = "imu_link";
+        imu.angular_velocity.x = msg.gyrox * M_PI / 180;
+        imu.angular_velocity.y = msg.gyroy * M_PI / 180;
+        imu.angular_velocity.z = msg.gyroz * M_PI / 180;
+        imu.angular_velocity_covariance[2 * 3 + 2] = 0.05;
+        publish<sensor_msgs::msg::Imu>("imu_raw", imu);
+
+        nav_sat_fix.header.stamp = node_->now();
+        nav_sat_fix.header.frame_id = "gnss_link";
+        nav_sat_fix.latitude = msg.latitude;
+        nav_sat_fix.longitude = msg.longitude;
+        nav_sat_fix.altitude = msg.altitude;
+        nav_sat_fix.status.status = 1;             // STATUS_FIX =0;STATUS_SBAS_FIX = 1
+        nav_sat_fix.status.service = 1;            // SERVICE_GPS
+        nav_sat_fix.position_covariance_type = 3;  // COVARIANCE_TYPE_KNOWN
+        if (msg.status == 0x42) {
+          nav_sat_fix.position_covariance[0] = 0.1;
+          nav_sat_fix.position_covariance[4] = 0.1;
+          nav_sat_fix.position_covariance[8] = 0.3;
+        } else if (msg.status == 0x52) {
+          nav_sat_fix.position_covariance[0] = 0.3;
+          nav_sat_fix.position_covariance[4] = 0.3;
+          nav_sat_fix.position_covariance[8] = 1.0;
+        } else {
+          nav_sat_fix.position_covariance[0] = 1.0;
+          nav_sat_fix.position_covariance[4] = 1.0;
+          nav_sat_fix.position_covariance[8] = 2.0;
+        }
+        publish<sensor_msgs::msg::NavSatFix>("nav_sat_fix", nav_sat_fix);
+
+        tf2::Quaternion frame_quat;
+        frame_quat.setRPY(msg.roll * M_PI / 180, msg.pitch * M_PI / 180, msg.heading2 * M_PI / 180);
+        gnss_ins_orientation.header.stamp = node_->now();
+        gnss_ins_orientation.orientation.orientation.x = frame_quat.x();
+        gnss_ins_orientation.orientation.orientation.y = frame_quat.y();
+        gnss_ins_orientation.orientation.orientation.z = frame_quat.z();
+        gnss_ins_orientation.orientation.orientation.w = frame_quat.w();
+        gnss_ins_orientation.orientation.rmse_rotation_x = 0.025;
+        gnss_ins_orientation.orientation.rmse_rotation_y = 0.025;
+        gnss_ins_orientation.orientation.rmse_rotation_z = 0.025;
+        publish<autoware_sensing_msgs::msg::GnssInsOrientationStamped>(
+          "gnss_ins_orientation", gnss_ins_orientation);
+
         break;
       }
     }

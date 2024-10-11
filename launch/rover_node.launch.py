@@ -56,4 +56,13 @@ def generate_launch_description():
         output='screen'
     )
 
-    return launch.LaunchDescription([arg_file_name, arg_file_path, node, tf_imu, tf_gnss, tf_vsm, tf_aux1])
+    rviz_dir = os.path.join(get_package_share_directory('huace_gnss_driver'), 'rviz_cfg', 'huace_gnss_imu.rviz')
+    rviz_node = Node(
+        package='rviz2',
+        namespace='cx',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_dir],
+        output='screen')
+
+    return launch.LaunchDescription([arg_file_name, arg_file_path, node, tf_imu, tf_gnss, tf_vsm, tf_aux1, rviz_node])
